@@ -1,6 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data.Entity;
-using System.Runtime.Remoting.Messaging;
+using System.Linq;
 using System.Threading.Tasks;
 using LoggingSample_BLL.Helpers;
 using LoggingSample_BLL.Models;
@@ -28,9 +29,19 @@ namespace LoggingSample_BLL.Services
             });
         }
 
+        public Task<IEnumerable<CustomerModel>> GetAllCustomers()
+        {
+            return _context.Customers.ToArrayAsync().ContinueWith(task =>
+            {
+                var customers = task.Result.Select(customer => customer.Map());
+
+                return customers;
+            });
+        }
+
         public void Dispose()
         {
-            _context.Dispose();
+            _context?.Dispose();
         }
     }
 

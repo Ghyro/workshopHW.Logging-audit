@@ -12,8 +12,10 @@ using System.Web.Http.Description;
 using System.Web.Http.Routing;
 using LoggingSample_BLL.Helpers;
 using LoggingSample_BLL.Models;
+using LoggingSample_BLL.Services;
 using LoggingSample_DAL.Context;
 using LoggingSample_DAL.Entities;
+using NLog;
 
 namespace LoggingSample.Controllers
 {
@@ -21,25 +23,45 @@ namespace LoggingSample.Controllers
     public class OrdersController : ApiController
     {
         private readonly AppDbContext _context = new AppDbContext();
+        private static Logger Logger = LogManager.GetCurrentClassLogger();
+        private static OrderService _orderService = new OrderService();
 
         [Route("customers/{customerId}/orders", Name = "Orders")]
         public async Task<IHttpActionResult> Get(int customerId)
         {
-            var customers = (await _context.Orders.Where(item => item.CustomerId == customerId).ToListAsync()).Select(item => item.Map()).Select(InitOrder);
+            Logger.Info($"Start getting all orders by customer id: {customerId}.");
 
-            return Ok(customers);
+            var orders = await _orderService.GetAllOrders(customerId);
+
+            Logger.Info($"Retrieving orders with customer id {customerId} to response.");
+
+            return Ok(orders.Select(InitOrder));
         }
 
         [Route("customers/{customerId}/orders/{orderId}", Name = "Order")]
         public async Task<IHttpActionResult> Get(int customerId, int orderId)
         {
-            var customer = (await _context.Orders.SingleOrDefaultAsync(item => item.Id == orderId && item.CustomerId == customerId)).Map();
+            Logger.Info($"Start getting order with id {orderId} by customer id {customerId}.");
 
-            if (customer == null) {
-                return NotFound();
+            try
+            {
+                var order = await _orderService.GetOrder(customerId, orderId);
+
+                if (order == null)
+                {
+                    Logger.Info($"No order with id {orderId} was found.");
+                    return NotFound();
+                }
+
+                Logger.Info($"Retrieving order with id {orderId} by customer id {customerId} to response.");
+
+                return Ok(InitOrder(order));
             }
-
-            return Ok(InitOrder(customer));
+            catch (Exception ex)
+            {
+                Logger.Error(ex, $"Some error occured while getting order id {orderId} by customer id {customerId}");
+                throw;
+            }
         }
 
         private object InitOrder(OrderModel model)

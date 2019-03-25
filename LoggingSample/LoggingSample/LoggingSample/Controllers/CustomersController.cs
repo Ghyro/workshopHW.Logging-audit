@@ -22,9 +22,13 @@ namespace LoggingSample.Controllers
         [Route("")]
         public async Task<IHttpActionResult> Get()
         {
-            var customers = (await _context.Customers.ToListAsync()).Select(item => item.Map()).Select(InitCustomer);
+            Logger.Info("Start getting all customers.");
 
-            return Ok(customers);
+            var customers = await _customerService.GetAllCustomers();
+
+            Logger.Info("Retrieving customers to response.");
+
+            return Ok(customers.Select(InitCustomer));
         }
 
         [Route("{customerId}", Name = "Customer")]
