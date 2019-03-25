@@ -22,6 +22,7 @@ namespace LoggingSample
             BundleConfig.RegisterBundles(BundleTable.Bundles);
 
             Target.Register<DbTarget>("DbTarget");
+            Target.Register<XMLTarget>("XMLTarget");
         }
     }
 }
